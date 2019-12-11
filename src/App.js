@@ -7,11 +7,11 @@ import { AssertionError } from 'assert';
 
 export default class App extends React.Component {
   constructor (props) {
-    const model = props.model;
-
-    const buildViewModel = function(m)
+    super(props)
+    this.model = props.model;
+    this.buildViewModel = function(m)
     {
-      const prepareHeader = (axes, arr) => {
+      const prepareMeta = (axes, arr) => {
         let [span,repeat] = [1,1];
         
         arr.forEach(item => {
@@ -27,72 +27,121 @@ export default class App extends React.Component {
         arr.total = span;
       }
 
-      prepareHeader(m.axes, m.columns);
-      prepareHeader(m.axes, m.rows);
-      console.log(m);
-
-      const grid = [];
-      m.rows.forEach(r => {
-        const row = [];
-        m.columns.forEach(()=>{row.push({value: ''})})
-        row[row.length-1].value = r.name;
-        for(let i=0; i<r.repeat; i++) {
-          for(let j=0; j<r.labels.length; j++) {
-            for(let k=0; k<r.span; k++) {
-              row.push({value: r.labels[j].name});
+      const buildLeftHeader = (m, grid) => {
+        for (let i = 0; i < m.columns.total; i++) {
+          const row = [];
+          m.columns.forEach(c => {
+            let remainder = Math.floor(i / c.span) % c.labels.length;
+            //if(i % c.span === 0) {
+            row.push({ value: c.labels[remainder].name, readOnly:true });
+            //}
+          });
+          for (let j = 0; j < m.rows.total; j++) {
+            row.push({ value: '' });
+          }
+          grid.push(row);
+        }
+      }
+    
+      const buildBar = (m, grid) => {
+        const bar = [];
+        m.columns.forEach(c => { bar.push({ value: c.name, readOnly:true }); });
+        for (let i = 0; i < m.rows.total; i++) {
+          bar.push({ value: '', readOnly:true });
+        }
+        grid.push(bar);
+      }
+    
+      const buildTopHeader = (m, grid) => {
+        m.rows.forEach(r => {
+          const row = [];
+          m.columns.forEach(() => { row.push({ value: '', readOnly:true }); });
+          row[row.length - 1].value = r.name;
+          for (let i = 0; i < r.repeat; i++) {
+            for (let j = 0; j < r.labels.length; j++) {
+              for (let k = 0; k < r.span; k++) {
+                row.push({ value: r.labels[j].name, readOnly:true });
+              }
             }
           }
-        }
-        grid.push(row);
-      });
-
-
-      for(let i=0;i<m.rows.length;i++) {
-        const r = m.rows[i];
-        const row = [];
-
-        if(i===0) {
-          row.push({value:'', colSpan:m.columns.length-1, rowSpan:m.rows.length});
-        }
-        row.push({value:r.name});
-        for(let i=0;i<r.repeat;i++) {
-          r.labels.forEach(label=>{row.push({value:label.name, colSpan:r.span})});
-        }
-        grid.push(row);
+          grid.push(row);
+        });
       }
-      
-      const bar = [];
-      m.columns.forEach(c=>{
-        bar.push({value:m.axes.find(x=>x.id===c.id).name});
-      })
-      bar.push({value:'', colSpan:m.rows.total});
-      grid.push(bar);
 
-      for(let i=0;i<m.columns.total;i++){
-        const row = [];
-        m.columns.forEach(c=>{
-          let remainder = Math.floor(i/c.span)%c.labels.length
-          if(i%c.span === 0) {
-            row.push({value:c.labels[remainder].name, rowSpan:c.span});
-          }
-        }); 
-        for(let j=0;j<m.rows.total;j++) {
-          row.push({value:''});
-        }
-        grid.push(row);
+      const findIndex = (cell, arr) => {
+        let padding = 0;
+          arr.forEach(item => {
+            const label = cell.labels.find(x => x.axis === item.id).label;
+            const index = item.labels.findIndex(x => x.id == label);
+            padding += index * item.span;
+          })
+        return padding;
       }
-      
+
+      const setValue = (m, grid) => {
+        m.cells.forEach(cell => {
+          const x = findIndex(cell, m.rows);
+          const y = findIndex(cell, m.columns);
+          grid[y + m.rows.length + 1][x + m.columns.length].value = cell.values.find(c => c.key === 1).value;
+        })
+      }
+    
+      prepareMeta(m.axes, m.columns);
+      prepareMeta(m.axes, m.rows);
+
+      const grid = [];
+      buildTopHeader(m, grid);
+      buildBar(m, grid);
+      buildLeftHeader(m, grid);
+      setValue(m, grid);
+      console.log(m)
+      console.log(grid)
       return grid;
     }
+    
 
-    super(props)
-    this.state = {
-      grid:buildViewModel(model)
+    this.state = { grid:this.buildViewModel(this.model) }
+  }
+  
+  getData() {
+    const grid = this.state.grid;
+    const m = this.model;
+    const data = [];
+
+    const findLabels = (index, arr) => {
+      const labels = [];
+      arr.forEach(item => {
+        const i = Math.floor(index/item.span) % item.labels.length;
+        const label = item.labels[i].id;
+        labels.push({axis:item.id, label: label});
+      })
+      return labels;
     }
+
+    const getValue = (m, grid) => {
+      for(let y=m.rows.length+1; y<grid.length; y++) {
+        for(let x=m.columns.length; x<grid[y].length; x++) {
+          if(grid[y][x].value !== '') {
+            data.push({
+            labels:findLabels(x-m.columns.length, m.rows).concat(findLabels(y-m.rows.length-1, m.columns)),
+            values: [{key:1, value:grid[y][x].value}]
+            });
+          }
+        }
+      }
+    }
+    getValue(m, grid);
+    return data;
   }
 
-  someMethod() {
-    console.log("hello");
+  changeAxes(rows, columns) {
+    console.log(rows,columns);
+    this.model.cells = this.getData();
+    this.model.rows = rows;
+    this.model.columns = columns;
+    const grid = this.buildViewModel(this.model);
+    console.log(grid);
+    this.setState({grid});
   }
 
   render () {
