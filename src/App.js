@@ -85,7 +85,7 @@ export default class App extends React.Component {
           grid[y + m.rows.length + 1][x + m.columns.length].value = cell.values.find(c => c.key === 1).value;
         })
       }
-    
+
       prepareMeta(m.axes, m.columns);
       prepareMeta(m.axes, m.rows);
 
@@ -98,16 +98,11 @@ export default class App extends React.Component {
       console.log(grid)
       return grid;
     }
-    
 
-    this.state = { grid:this.buildViewModel(this.model) }
+    this.state = { grid:this.buildViewModel(this.model), valueIndex:this.model.keys.findIndex(x=>x.id === this.model.key) }
   }
   
   getData() {
-    const grid = this.state.grid;
-    const m = this.model;
-    const data = [];
-
     const findLabels = (index, arr) => {
       const labels = [];
       arr.forEach(item => {
@@ -119,6 +114,7 @@ export default class App extends React.Component {
     }
 
     const getValue = (m, grid) => {
+      const data = [];
       for(let y=m.rows.length+1; y<grid.length; y++) {
         for(let x=m.columns.length; x<grid[y].length; x++) {
           if(grid[y][x].value !== '') {
@@ -129,18 +125,16 @@ export default class App extends React.Component {
           }
         }
       }
+      return data;
     }
-    getValue(m, grid);
-    return data;
+    return getValue(this.model, this.state.grid);
   }
 
   changeAxes(rows, columns) {
-    console.log(rows,columns);
     this.model.cells = this.getData();
     this.model.rows = rows;
     this.model.columns = columns;
     const grid = this.buildViewModel(this.model);
-    console.log(grid);
     this.setState({grid});
   }
 
