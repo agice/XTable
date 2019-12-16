@@ -1,10 +1,20 @@
 import React from 'react';
+import _ from 'lodash';
 import Datasheet from 'react-datasheet';
 import 'react-datasheet/lib/react-datasheet.css';
 import './XTable.css'
 
-function buildViewModel (axes, keys, rows, columns, cells) {
+function buildViewModel(axes, rows, columns, keys, cells) {
   const evenClass = 'even';
+
+  const checkParameters = () => {
+    if (axes.length === 0) console.error('The dictionary is required.');
+    if (rows.length === 0) console.error('The x-axis needs dictionary.');
+    if (columns.length === 0) console.error('The y-axis needs dictionary.');
+    if (keys.length !== 1) console.error('The z-axis has one and only one dictionary.')
+    const xyzAxes = [...rows, ...columns, ...keys].map(x => x.id);
+    if (!_.isEqual(xyzAxes.sort(), axes.map(x => x.id).sort())) console.error('All dictionaries need to be used.');
+  }
 
   const prepareMeta = (arr) => {
     let [span, repeat] = [1, 1];
@@ -22,7 +32,7 @@ function buildViewModel (axes, keys, rows, columns, cells) {
     arr.total = span;
   }
 
-  const buildLeftHeader = () => {
+  const buildLeftHeader = (grid) => {
     for (let i = 0; i < columns.total; i++) {
       const row = [];
       columns.forEach(c => {
@@ -37,7 +47,7 @@ function buildViewModel (axes, keys, rows, columns, cells) {
     }
   }
 
-  const buildTopBar = () => {
+  const buildTopBar = (grid) => {
     const bar = [];
     columns.forEach(c => { bar.push({ t: c.name, readOnly: true }); });
     for (let i = 0; i < rows.total; i++) {
@@ -46,7 +56,7 @@ function buildViewModel (axes, keys, rows, columns, cells) {
     grid.push(bar);
   }
 
-  const buildTopHeader = () => {
+  const buildTopHeader = (grid) => {
     rows.forEach(r => {
       const row = [];
       columns.forEach(() => { row.push({ readOnly: true }); });
@@ -64,14 +74,13 @@ function buildViewModel (axes, keys, rows, columns, cells) {
     });
   }
 
-  const setValues = () => {
-    const findIndex = (cell, arr) => {
+  const setValues = (grid) => {
+    const findIndex = (cell, axes) => {
       let padding = 0;
-      arr.forEach(item => {
-        console.log(item,cell)
-        const label = cell.labels.find(x => x.axis === item.id).label;
-        const index = item.labels.findIndex(x => x.id === label);
-        padding += index * item.span;
+      axes.forEach(axis => {
+        const label = cell.labels.find(x => x[0] === axis.id)[1];
+        const index = axis.labels.findIndex(x => x.id === label);
+        padding += index * axis.span;
       })
       return padding;
     }
@@ -85,35 +94,32 @@ function buildViewModel (axes, keys, rows, columns, cells) {
     })
   }
 
-  prepareMeta(columns);
+  checkParameters();
   prepareMeta(rows);
+  prepareMeta(columns);
   prepareMeta(keys);
-
-  const grid = [];
-  buildTopHeader();
-  buildTopBar();
-  buildLeftHeader();
-  setValues();
-  console.log(grid);
-  return grid;
+  const g = [];
+  buildTopHeader(g);
+  buildTopBar(g);
+  buildLeftHeader(g);
+  setValues(g);
+  return g;
 }
 
-function findValueIndex(axes, keys, valuekey) {
-  return axes.find(x => x.id === keys[0].id).labels.findIndex(x => x.id === valuekey);
-}
 export default class XTable extends React.Component {
   constructor(props) {
     super(props)
     this.axes = props.axes;
-    this.rows = props.rows.map(x=>({id:x}));
-    this.columns = props.columns.map(x=>({id:x}));
-    this.keys = props.keys.map(x=>({id:x}));
-    this.cells = props.cells;
+    this.rows = props.rows.map(x => ({ id: x }));
+    this.columns = props.columns.map(x => ({ id: x }));
+    this.keys = props.keys.map(x => ({ id: x }));
 
     this.state = {
-      grid: buildViewModel(this.axes, this.keys, this.rows, this.columns, this.cells),
-      valueIndex: findValueIndex(this.axes, this.keys, props.valueKey)
+      grid: buildViewModel(this.axes, this.rows, this.columns, this.keys, props.cells),
+      valueIndex: 0
     }
+
+    this.handleValueKeyChange = this.handleValueKeyChange.bind(this);
   }
 
   getData() {
@@ -122,73 +128,87 @@ export default class XTable extends React.Component {
       arr.forEach(item => {
         const i = Math.floor(index / item.span) % item.labels.length;
         const label = item.labels[i].id;
-        labels.push({ axis: item.id, label: label });
+        labels.push([item.id, label]);
       })
       return labels;
     }
 
     const findZLabels = (index, arr) => {
-      return arr.map((item,i) => {
-        return {axis: item.id, label: item.labels[index].id}
+      return arr.map((item, i) => {
+        return [item.id, item.labels[index].id];
       })
     }
 
-    const getValue = (columns, rows, keys, grid) => {
+    const getValue = (rows, columns, keys, grid) => {
       const data = [];
       for (let y = rows.length + 1; y < grid.length; y++) {
         for (let x = columns.length; x < grid[y].length; x++) {
           const node = grid[y][x];
-          if (node.v !== undefined) {
-            if (!node.v.some(e => e !== undefined && e !== '')) {
-              delete node.v;
-              continue;
-            }
-            node.v.forEach((v,i) => {
-              if(v !== undefined && v !== '') {
-                data.push({
-                  labels: [...findLabels(x - columns.length, rows), ...findLabels(y - rows.length - 1, columns), ...findZLabels(i, keys)],
-                  value: v
-                });
-              }
-            })
+          if (node.v === undefined) { continue }
+          if (!node.v.some(e => e !== undefined && e !== '')) {
+            delete node.v;
+            continue;
           }
+          node.v.forEach((v, i) => {
+            if (v === undefined || v === '') { return }
+            data.push({
+              labels: [...findLabels(x - columns.length, rows), ...findLabels(y - rows.length - 1, columns), ...findZLabels(i, keys)],
+              value: v
+            });
+          })
         }
       }
       return data;
     }
-    return getValue(this.columns, this.rows, this.keys, this.state.grid);
+    return getValue(this.rows, this.columns, this.keys, this.state.grid);
   }
 
   changeAxes(rows, columns, keys) {
-    this.cells = this.getData();
-    this.rows = rows.map(x=>({id:x}));
-    this.columns = columns.map(x=>({id:x}));
-    this.keys = keys.map(x=>({id:x}));
-    const grid = buildViewModel(this.axes, this.keys, this.rows, this.columns, this.cells);
-    this.setState({ grid });
+    const cells = this.getData();
+    this.rows = rows.map(x => ({ id: x }));
+    this.columns = columns.map(x => ({ id: x }));
+    this.keys = keys.map(x => ({ id: x }));
+    const grid = buildViewModel(this.axes, this.rows, this.columns, this.keys, cells);
+    this.setState({ grid, valueIndex: 0 });
+  }
+
+  handleValueKeyChange(e) {
+    const valueKey = parseInt(e.target.value);
+    const valueIndex = this.axes.find(x => x.id === this.keys[0].id).labels.findIndex(x => x.id === valueKey)
+    this.setState({ valueIndex: valueIndex })
   }
 
   render() {
-    const valueIndex = findValueIndex(this.axes, this.keys, this.props.valueKey);
+    const valueAxis = this.axes.find(x => x.id === this.keys[0].id);
+    const valueIndex = this.state.valueIndex;
+    const valueKey = valueAxis.labels[valueIndex].id;
     return (
-      <Datasheet
-        data={this.state.grid}
-        valueRenderer={(cell) => {
-          if (cell.t !== undefined) { return cell.t }
-          if (cell.v !== undefined && cell.v[valueIndex] !== undefined) { return cell.v[valueIndex] }
-          return ''
-        }}
-        onContextMenu={(e, cell, i, j) => cell.readOnly ? e.preventDefault() : null}
-        onCellsChanged={changes => {
-          const grid = this.state.grid;
-          changes.forEach(({ cell, row, col, value }) => {
-            const node = this.state.grid[row][col];
-            if (node.v === undefined) { node.v = [] }
-            node.v[valueIndex] = value;
-          })
-          this.setState({ grid })
-        }}
-      />
+      <>
+        <div>
+          <label>{valueAxis.name}</label>
+          {valueAxis.labels.map((n, i) =>
+            <label key={n.id}><input type='radio' value={n.id} checked={n.id === valueKey} onChange={this.handleValueKeyChange} />{n.name}</label>
+          )}
+        </div>
+        <Datasheet
+          data={this.state.grid}
+          valueRenderer={(cell) => {
+            if (cell.t !== undefined) { return cell.t }
+            if (cell.v !== undefined && cell.v[valueIndex] !== undefined) { return cell.v[valueIndex] }
+            return ''
+          }}
+          onContextMenu={(e, cell, i, j) => cell.readOnly ? e.preventDefault() : null}
+          onCellsChanged={changes => {
+            const grid = this.state.grid;
+            changes.forEach(({ cell, row, col, value }) => {
+              const node = this.state.grid[row][col];
+              if (node.v === undefined) { node.v = [] }
+              node.v[valueIndex] = value;
+            })
+            this.setState({ grid })
+          }}
+        />
+      </>
     )
   }
 }

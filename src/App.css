@@ -1,4 +1,7 @@
-.xtable-axes-table select {
+body {
+    padding:4px;
+}
+.xtable-axes-table select, .xtable-axes-table input[type=text] {
     width: 100px;
 }
 

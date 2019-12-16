@@ -2,16 +2,13 @@ import React from 'react';
 import _ from 'lodash';
 
 
-export default class XTableConf extends React.Component {
+export default class XTableAxesConf extends React.Component {
     constructor(props) {
         super(props);
 
-        this.handleGetDataClick = this.handleGetDataClick.bind(this);
-        this.handleValueKeyChange = this.handleValueKeyChange.bind(this);
         this.handleRowsChange = this.handleRowsChange.bind(this);
         this.handleColumnsChange = this.handleColumnsChange.bind(this);
         this.handleChangeAxesClick = this.handleChangeAxesClick.bind(this);
-
         this.handleAxesListChanage = this.handleAxesListChanage.bind(this);
         this.handleAddX = this.handleAddX.bind(this)
         this.handleRemoveX = this.handleRemoveX.bind(this)
@@ -31,51 +28,34 @@ export default class XTableConf extends React.Component {
             row: this.xyz.rows[0],
             column: this.xyz.columns[0],
             key: this.xyz.keys[0],
-            value: this.props.valueKey
         }
         this.state = { xyz: this.xyz, selected: this.selected }
-        console.log(this.state)
-    }
-
-    handleGetDataClick(e) {
-        this.props.onGetDataClick();
-    }
-
-    handleValueKeyChange(e) {
-        this.selected.value = parseInt(e.target.value);
-        this.setState({ selected: this.selected })
-        this.props.onValueKeyChange(this.selected.value);
-        console.log(this.state.selected)
     }
 
     handleRowsChange(e) {
         this.selected.row = parseInt(e.target.value);
         this.setState({ selected: this.selected })
-        console.log(this.state.selected)
     }
 
     handleColumnsChange(e) {
         this.selected.column = parseInt(e.target.value);
         this.setState({ selected: this.selected })
-        console.log(this.state.selected)
     }
 
     handleChangeAxesClick(e) {
         if (this.state.xyz.columns.length === 0 ||
             this.state.xyz.rows.length === 0 ||
-            this.state.xyz.keys.length != 1 ||
+            this.state.xyz.keys.length !== 1 ||
             this.state.xyz.axes.length !== 0) {
             alert('Please assign all axes');
             return;
         }
-        console.log(this.state)
         this.props.onChangeAxesClick(this.state.xyz);
     }
 
     handleAxesListChanage(e) {
         this.selected.axis = parseInt(e.target.value);
         this.setState({ selected: this.selected })
-        console.log(this.state.selected)
     }
 
     handleAddX() {
@@ -86,7 +66,6 @@ export default class XTableConf extends React.Component {
         this.xyz.axes = this.xyz.axes.filter(x => x !== selected)
         this.selected.axis = this.xyz.axes.length > 0 ? this.xyz.axes[0] : null;
         this.setState({ xyz: this.xyz, selected: this.selected })
-        console.log(this.state)
     }
 
     handleRemoveX() {
@@ -97,7 +76,6 @@ export default class XTableConf extends React.Component {
         this.xyz.rows = this.xyz.rows.filter(x => x !== selected)
         this.selected.row = this.xyz.rows.length > 0 ? this.xyz.rows[0] : null;
         this.setState({ xyz: this.xyz, selected: this.selected })
-        console.log(this.state)
     }
 
     handleAddY() {
@@ -108,7 +86,6 @@ export default class XTableConf extends React.Component {
         this.xyz.axes = this.xyz.axes.filter(x => x !== selected)
         this.selected.axis = this.xyz.axes.length > 0 ? this.xyz.axes[0] : null;
         this.setState({ xyz: this.xyz, selected: this.selected })
-        console.log(this.state)
     }
 
     handleRemoveY() {
@@ -119,7 +96,6 @@ export default class XTableConf extends React.Component {
         this.xyz.columns = this.xyz.columns.filter(x => x !== selected)
         this.selected.column = this.xyz.columns.length > 0 ? this.xyz.columns[0] : null;
         this.setState({ xyz: this.xyz, selected: this.selected })
-        console.log(this.state)
     }
 
     handleChangeZ(e) {
@@ -132,7 +108,6 @@ export default class XTableConf extends React.Component {
         this.xyz.axes.push(currentKey);
         this.selected.axis = currentKey;
         this.setState({ xyz: this.xyz, selected: this.selected })
-        console.log(this.state)
     }
 
     render() {
@@ -146,19 +121,10 @@ export default class XTableConf extends React.Component {
 
         return (
             <>
-                <div><label>Value</label></div>
-                <select size='5' value={this.state.selected.value} onChange={this.handleValueKeyChange}>
-                    {findAxis(this.state.selected.key).labels.map((n) =>
-                        <option key={n.id} value={n.id}>{n.name}</option>
-                    )}
-                </select>
-                <p>
-                    <input type="button" value="Get Data" onClick={this.handleGetDataClick} />
-                </p>
-                <table class='xtable-axes-table'>
+                <table className='xtable-axes-table'>
                     <tbody>
-                        <tr><td rowSpan='3'>
-                            <div><label>Dictionary</label></div>
+                        <tr><td>Dictionary</td><td></td><td>X</td></tr>
+                        <tr><td rowSpan='5'>
                             <select size='16' value={this.state.selected.axis !== null ? this.state.selected.axis : ''} onChange={this.handleAxesListChanage}>
                                 {options(this.state.xyz.axes)}
                             </select>
@@ -166,28 +132,26 @@ export default class XTableConf extends React.Component {
                             <td> <div><input type='button' value='->' onClick={this.handleAddX}></input></div>
                                 <div><input type='button' value='<-' onClick={this.handleRemoveX}></input></div> </td>
                             <td>
-                                <div><label>X</label></div>
                                 <select size='5' value={this.state.selected.row !== null ? this.state.selected.row : ''} onChange={this.handleRowsChange}>
                                     {options(this.state.xyz.rows)}
                                 </select>
                             </td>
                         </tr>
+                        <tr><td></td><td>Y</td></tr>
                         <tr>
                             <td> <div><input type='button' value='->' onClick={this.handleAddY}></input></div>
                                 <div><input type='button' value='<-' onClick={this.handleRemoveY}></input></div> </td>
                             <td>
-                                <div><label>Y</label></div>
                                 <select size='5' value={this.state.selected.column !== null ? this.state.selected.column : ''} onChange={this.handleColumnsChange}>
                                     {options(this.state.xyz.columns)}
                                 </select>
                             </td>
                         </tr>
+                        <tr><td></td><td>Z</td></tr>
                         <tr>
                             <td> <input type='button' value='<->' onClick={this.handleChangeZ}></input> </td>
                             <td>
-                                <div><label>Z</label></div>
                                 <input type='text' readOnly={true} value={findAxis(this.state.selected.key).name} />
-
                             </td>
                         </tr>
                     </tbody>

@@ -6,22 +6,22 @@ import * as serviceWorker from './serviceWorker';
 
 const model = {
     axes: [
-        { id: 11, name: '期数', labels: [{ id: 1, name: '3' }, { id: 2, name: '6' }, { id: 3, name: '9' }, { id: 4, name: '12' }] },
-        { id: 12, name: '测试组', labels: [{ id: 1, name: 'A' }, { id: 2, name: 'B' }] },
-        { id: 13, name: '风险等级', labels: [{ id: 1, name: 'RG0' }, { id: 2, name: 'RG1' }, { id: 3, name: 'RG2' }, { id: 4, name: 'RG3' }, { id: 5, name: 'RG4' }, { id: 6, name: 'RG5' }] },
-        { id: 14, name: '复贷', labels: [{ id: 1, name: '是' }, { id: 2, name: '否' }] },
-        { id: 6, name: '资方', labels: [{ id: 101, name: '兴业' }, { id: 102, name: '云信' }, { id: 103, name: '富登' }] },
-        { id: 7, name: '费率', labels: [{ id: 10, name: 'fee' }, { id: 20, name: 'money' }] }],
-    rows: [6,11,12],
-    columns: [13,14],
+        { id: 11, name: 'Gender', labels: [{ id: 1, name: 'F' }, { id: 2, name: 'M' }] },
+        { id: 12, name: 'Age', labels: [{ id: 1, name: '(0,18)' }, { id: 2, name: '[18,35)' }, { id: 2, name: '[35,60]' }, { id: 2, name: '(60,)' }] },
+        { id: 13, name: 'City', labels: [{ id: 1, name: 'New York' }, { id: 2, name: 'Tokyo' }, { id: 3, name: 'Beijing' }] },
+        { id: 14, name: 'Levels', labels: [{ id: 1, name: 'Junior' }, { id: 2, name: 'Senior' }] },
+        { id: 6, name: 'Departments', labels: [{ id: 101, name: 'RD' }, { id: 102, name: 'PM' }, { id: 103, name: 'QA' }] },
+        { id: 7, name: 'Parameters', labels: [{ id: 10, name: 'Number' }, { id: 20, name: 'Code' }] }],
+    rows: [11, 12],
+    columns: [13, 14, 6],
     keys: [7],
-    valueKey: 10,
     cells: [
-        { labels: [{ axis: 11, label: 4 }, { axis: 12, label: 2 }, { axis: 13, label: 3 }, { axis: 14, label: 1 }, { axis: 6, label: 102 }, {axis: 7, label: 10}], value: 'hello' },
-        { labels: [{ axis: 11, label: 4 }, { axis: 12, label: 2 }, { axis: 13, label: 3 }, { axis: 14, label: 1 }, { axis: 6, label: 102 }, {axis: 7, label: 20}], value: 'world' }]
+        { labels: [[11, 1], [12, 2], [13, 3], [14, 1], [6, 102], [7, 10]], value: '3' },
+        { labels: [[11, 1], [12, 2], [13, 3], [14, 2], [6, 102], [7, 20]], value: 'XMan' },
+        { labels: [[11, 1], [12, 2], [13, 3], [14, 1], [6, 101], [7, 10]], value: '10' },
+        { labels: [[11, 1], [12, 2], [13, 3], [14, 2], [6, 101], [7, 20]], value: 'Ken' }]
 };
 
 ReactDOM.render(<App model={model} />, document.getElementById('root'));
 
 serviceWorker.unregister();
-
