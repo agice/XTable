@@ -14,15 +14,14 @@ export default class App extends React.Component {
 
   handleGetDataClick() {
     console.log(this.xTable.getData());
-    this.xTable.changeAxes([{ id: 6 }, { id: 11 }],[{ id: 13 }, { id: 14 }, { id: 12 }]);
   }
 
   handleValueKeyChange(valueKey) {
     this.setState({ valueKey });
   }
 
-  handleChangeAxesClick(columns, rows) {
-    this.xTable.changeAxes(rows, columns);
+  handleChangeAxesClick(xyz) {
+    this.xTable.changeAxes(xyz.rows, xyz.columns, xyz.keys);
   }
 
   render() {

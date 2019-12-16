@@ -1,0 +1,12 @@
+.data-grid-container .data-grid td {
+    min-width: 60px;
+}
+
+.data-grid-container .data-grid .cell.read-only.even {
+    background-color: white;
+}
+
+.data-grid-container .data-grid .cell>input {
+    height: 100%;
+    width: calc(100% - 3px); 
+}

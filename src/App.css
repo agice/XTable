@@ -1,12 +1,12 @@
-.data-grid-container .data-grid td {
-    min-width: 60px;
+.xtable-axes-table select {
+    width: 100px;
 }
 
-.data-grid-container .data-grid .cell.read-only.even {
-    background-color: white;
+.xtable-axes-table input[type=button] {
+    width:40px;
 }
 
-.data-grid-container .data-grid .cell>input {
-    height: 100%;
-    width: calc(100% - 3px);
+.xtable-axes-table td {
+    vertical-align: top;
 }
+
