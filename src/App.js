@@ -9,13 +9,12 @@ export default class App extends React.Component {
     this.handleGetDataClick = this.handleGetDataClick.bind(this);
     this.handleValueKeyChange = this.handleValueKeyChange.bind(this);
     this.handleChangeAxesClick = this.handleChangeAxesClick.bind(this);
-
-    console.log(props)
     this.state = { valueKey: props.model.valueKey };
   }
 
   handleGetDataClick() {
     console.log(this.xTable.getData());
+    this.xTable.changeAxes([{ id: 6 }, { id: 11 }],[{ id: 13 }, { id: 14 }, { id: 12 }]);
   }
 
   handleValueKeyChange(valueKey) {
@@ -23,8 +22,7 @@ export default class App extends React.Component {
   }
 
   handleChangeAxesClick(columns, rows) {
-    const [r, c] = [rows.map(x => { return { id: x } }), columns.map(x => { return { id: x } })];
-    this.xTable.changeAxes(r, c);
+    this.xTable.changeAxes(rows, columns);
   }
 
   render() {
@@ -40,6 +38,7 @@ export default class App extends React.Component {
           cells={this.props.model.cells} ></XTable>
 
         <XTableConf
+          axes={this.props.model.axes}
           keys={this.props.model.keys}
           columns={this.props.model.columns}
           rows={this.props.model.rows}

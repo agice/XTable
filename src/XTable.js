@@ -1,6 +1,7 @@
 import React from 'react';
 import Datasheet from 'react-datasheet';
 import 'react-datasheet/lib/react-datasheet.css';
+import { configure } from '@testing-library/dom';
 
 export default class XTable extends React.Component {
   constructor(props) {
@@ -12,9 +13,11 @@ export default class XTable extends React.Component {
     this.cells = props.cells;
 
     this.buildViewModel = function (axes, keys, rows, columns, cells) {
+      console.log(rows,columns,keys,cells)
       const evenClass = 'even';
 
       const prepareMeta = (axes, arr) => {
+        console.log(axes, arr)
         let [span, repeat] = [1, 1];
 
         arr.forEach(item => {
@@ -82,31 +85,35 @@ export default class XTable extends React.Component {
         return padding;
       }
 
-      const setValue = (columns, rows, cells, grid) => {
+      const setValue = (columns, rows, keys, cells, grid) => {
         cells.forEach(cell => {
+          console.log(cell)
           const x = findIndex(cell, rows);
           const y = findIndex(cell, columns);
+          const z = findIndex(cell, keys);
           const node = grid[y + rows.length + 1][x + columns.length];
           if (node.v === undefined) { node.v = [] }
-          cell.values.forEach(x => node.v[keys.findIndex(n => n.id === x.key)] = x.value)
+          node.v[z] = cell.value;
         })
       }
 
       prepareMeta(axes, columns);
       prepareMeta(axes, rows);
+      prepareMeta(axes, keys);
 
       const grid = [];
       buildTopHeader(columns, rows, grid);
       buildBar(columns, rows, grid);
       buildLeftHeader(columns, rows, grid);
-      setValue(columns, rows, cells, grid);
+      setValue(columns, rows, keys, cells, grid);
 
       console.log(grid)
       return grid;
     }
+
     this.state = {
       grid: this.buildViewModel(this.axes, this.keys, this.rows, this.columns, this.cells),
-      valueIndex: this.keys.findIndex(x => x.id === this.props.valueKey)
+      valueIndex: this.axes.find(x => x.id === this.keys[0].id).labels.findIndex(x => x.id === this.props.valueKey)
     }
   }
 
@@ -121,6 +128,12 @@ export default class XTable extends React.Component {
       return labels;
     }
 
+    const findZLabels = (index, arr) => {
+      return arr.map((item,i) => {
+        return {axis: item.id, label: item.labels[index].id}
+      })
+    }
+
     const getValue = (columns, rows, keys, grid) => {
       const data = [];
       for (let y = rows.length + 1; y < grid.length; y++) {
@@ -131,10 +144,15 @@ export default class XTable extends React.Component {
               delete node.v;
               continue;
             }
-            data.push({
-              labels: findLabels(x - columns.length, rows).concat(findLabels(y - rows.length - 1, columns)),
-              values: node.v.map((x, i) => { return { key: keys[i].id, value: x } })
-            });
+            node.v.forEach((v,i) => {
+              if(v !== undefined && v !== '') {
+                data.push({
+                  labels: [...findLabels(x - columns.length, rows), ...findLabels(y - rows.length - 1, columns), ...findZLabels(i, keys)],
+                  value: v
+                });
+              }
+            })
+            
           }
         }
       }
@@ -148,11 +166,12 @@ export default class XTable extends React.Component {
     this.rows = rows;
     this.columns = columns;
     const grid = this.buildViewModel(this.axes, this.keys, this.rows, this.columns, this.cells);
+    console.warn(grid)
     this.setState({ grid });
   }
 
   render() {
-    const valueIndex = this.keys.findIndex(x => x.id === this.props.valueKey);
+    const valueIndex = this.axes.find(x => x.id === this.keys[0].id).labels.findIndex(x => x.id === this.props.valueKey);
     return (
       <Datasheet
         data={this.state.grid}
