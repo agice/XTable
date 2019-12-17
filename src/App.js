@@ -1,17 +1,22 @@
 import React from 'react';
-import XTable from './XTable';
-import XTableAxesConf from './XTableAxesConf';
+import XTable from './XTable.jsx';
+import XTableAxesConf from './XTableAxesConf.jsx';
 import './App.css';
 
 export default class App extends React.Component {
   constructor(props) {
     super(props);
     this.handleGetDataClick = this.handleGetDataClick.bind(this);
+    this.handleSetDataClick = this.handleSetDataClick.bind(this);
     this.handleChangeAxesClick = this.handleChangeAxesClick.bind(this);
   }
 
   handleGetDataClick() {
     alert(JSON.stringify(this.xTable.getData()).split('},{').join('},\n{'));
+  }
+
+  handleSetDataClick() {
+    this.xTable.setData([{ labels: [[11, 2], [12, 2], [13, 3], [14, 1], [6, 102], [7, 10]], value: '101' }], true);
   }
 
   handleChangeAxesClick(xyz) {
@@ -30,6 +35,7 @@ export default class App extends React.Component {
           cells={this.props.model.cells} ></XTable>
         <p>
             <input type="button" value="Get Data" onClick={this.handleGetDataClick} />
+            <input type="button" value="Set Data" onClick={this.handleSetDataClick} />
         </p>
 
         <XTableAxesConf

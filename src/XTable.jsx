@@ -4,17 +4,17 @@ import Datasheet from 'react-datasheet';
 import 'react-datasheet/lib/react-datasheet.css';
 import './XTable.css'
 
-function buildViewModel(axes, rows, columns, keys, cells) {
-  const evenClass = 'even';
+function checkParameters (axes, rows, columns, keys) {
+  if (axes.length === 0) console.error('The dictionary is required.');
+  if (rows.length === 0) console.error('The x-axis needs dictionary.');
+  if (columns.length === 0) console.error('The y-axis needs dictionary.');
+  if (keys.length !== 1) console.error('The z-axis has one and only one dictionary.')
+  const xyzAxes = [...rows, ...columns, ...keys].map(x => x.id);
+  if (!_.isEqual(xyzAxes.sort(), axes.map(x => x.id).sort())) console.error('All dictionaries need to be used.');
+}
 
-  const checkParameters = () => {
-    if (axes.length === 0) console.error('The dictionary is required.');
-    if (rows.length === 0) console.error('The x-axis needs dictionary.');
-    if (columns.length === 0) console.error('The y-axis needs dictionary.');
-    if (keys.length !== 1) console.error('The z-axis has one and only one dictionary.')
-    const xyzAxes = [...rows, ...columns, ...keys].map(x => x.id);
-    if (!_.isEqual(xyzAxes.sort(), axes.map(x => x.id).sort())) console.error('All dictionaries need to be used.');
-  }
+function buildModelStructure(axes, rows, columns, keys, cells) {
+  const evenClass = 'even';
 
   const prepareMeta = (arr) => {
     let [span, repeat] = [1, 1];
@@ -73,28 +73,7 @@ function buildViewModel(axes, rows, columns, keys, cells) {
       grid.push(row);
     });
   }
-
-  const setValues = (grid) => {
-    const findIndex = (cell, axes) => {
-      let padding = 0;
-      axes.forEach(axis => {
-        const label = cell.labels.find(x => x[0] === axis.id)[1];
-        const index = axis.labels.findIndex(x => x.id === label);
-        padding += index * axis.span;
-      })
-      return padding;
-    }
-    cells.forEach(cell => {
-      const x = findIndex(cell, rows);
-      const y = findIndex(cell, columns);
-      const z = findIndex(cell, keys);
-      const node = grid[y + rows.length + 1][x + columns.length];
-      if (node.v === undefined) { node.v = [] }
-      node.v[z] = cell.value;
-    })
-  }
-
-  checkParameters();
+  
   prepareMeta(rows);
   prepareMeta(columns);
   prepareMeta(keys);
@@ -102,8 +81,27 @@ function buildViewModel(axes, rows, columns, keys, cells) {
   buildTopHeader(g);
   buildTopBar(g);
   buildLeftHeader(g);
-  setValues(g);
   return g;
+}
+
+function setModelValues(rows, columns, keys, cells, grid) {
+  const findIndex = (cell, axes) => {
+    let padding = 0;
+    axes.forEach(axis => {
+      const label = cell.labels.find(x => x[0] === axis.id)[1];
+      const index = axis.labels.findIndex(x => x.id === label);
+      padding += index * axis.span;
+    })
+    return padding;
+  }
+  cells.forEach(cell => {
+    const x = findIndex(cell, rows);
+    const y = findIndex(cell, columns);
+    const z = findIndex(cell, keys);
+    const node = grid[y + rows.length + 1][x + columns.length];
+    if (node.v === undefined) { node.v = [] }
+    node.v[z] = cell.value;
+  })
 }
 
 export default class XTable extends React.Component {
@@ -114,12 +112,24 @@ export default class XTable extends React.Component {
     this.columns = props.columns.map(x => ({ id: x }));
     this.keys = props.keys.map(x => ({ id: x }));
 
+    checkParameters(this.axes, this.rows, this.columns, this.keys);
+    const grid = buildModelStructure(this.axes, this.rows, this.columns, this.keys, props.cells);
+    setModelValues(this.rows, this.columns, this.keys, props.cells, grid);
     this.state = {
-      grid: buildViewModel(this.axes, this.rows, this.columns, this.keys, props.cells),
+      grid: grid,
       valueIndex: 0
     }
 
     this.handleValueKeyChange = this.handleValueKeyChange.bind(this);
+  }
+
+  setData(cells, keepOldData = false) {
+    if (keepOldData) {
+      cells = [...cells, ...this.getData()];
+    }
+    const grid = buildModelStructure(this.axes, this.rows, this.columns, this.keys, cells);
+    setModelValues(this.rows, this.columns, this.keys, cells, grid);
+    this.setState({ grid });
   }
 
   getData() {
@@ -139,7 +149,7 @@ export default class XTable extends React.Component {
       })
     }
 
-    const getValue = (rows, columns, keys, grid) => {
+    const getValues = (rows, columns, keys, grid) => {
       const data = [];
       for (let y = rows.length + 1; y < grid.length; y++) {
         for (let x = columns.length; x < grid[y].length; x++) {
@@ -160,7 +170,7 @@ export default class XTable extends React.Component {
       }
       return data;
     }
-    return getValue(this.rows, this.columns, this.keys, this.state.grid);
+    return getValues(this.rows, this.columns, this.keys, this.state.grid);
   }
 
   changeAxes(rows, columns, keys) {
@@ -168,7 +178,9 @@ export default class XTable extends React.Component {
     this.rows = rows.map(x => ({ id: x }));
     this.columns = columns.map(x => ({ id: x }));
     this.keys = keys.map(x => ({ id: x }));
-    const grid = buildViewModel(this.axes, this.rows, this.columns, this.keys, cells);
+    checkParameters(this.axes, this.rows, this.columns, this.keys);
+    const grid = buildModelStructure(this.axes, this.rows, this.columns, this.keys, cells);
+    setModelValues(this.rows, this.columns, this.keys, cells, grid);
     this.setState({ grid, valueIndex: 0 });
   }
 

@@ -58,56 +58,46 @@ export default class XTableAxesConf extends React.Component {
         this.setState({ selected: this.selected })
     }
 
-    handleAddX() {
-        const selected = this.selected.axis;
+    moveItems(from, to, fromList, toList) {
+        const selected = this.selected[from];
         if (selected == null) { return }
-        this.xyz.rows.push(selected);
-        this.selected.row = selected;
-        this.xyz.axes = this.xyz.axes.filter(x => x !== selected)
-        this.selected.axis = this.xyz.axes.length > 0 ? this.xyz.axes[0] : null;
+        this.xyz[toList].push(selected);
+        this.selected[to] = selected;
+        this.xyz[fromList] = this.xyz[fromList].filter(x => x !== selected)
+        this.selected[from] = this.xyz[fromList].length > 0 ? this.xyz[fromList][0] : null;
         this.setState({ xyz: this.xyz, selected: this.selected })
+    }
+
+    switchItems(from, to, fromList, toList) {
+        const selected = this.selected[from];
+        if (selected == null) { return }
+        const currentKey = this.xyz[toList][0];
+        this.xyz[toList] = [selected];
+        this.selected[to] = selected;
+        this.xyz[fromList] = this.xyz[fromList].filter(x => x !== selected)
+        this.xyz[fromList].push(currentKey);
+        this.selected[from] = currentKey;
+        this.setState({ xyz: this.xyz, selected: this.selected })
+    }
+
+    handleAddX() {
+        this.moveItems('axis', 'row', 'axes', 'rows');
     }
 
     handleRemoveX() {
-        const selected = this.selected.row;
-        if (selected == null) { return }
-        this.xyz.axes.push(selected);
-        this.selected.axis = selected;
-        this.xyz.rows = this.xyz.rows.filter(x => x !== selected)
-        this.selected.row = this.xyz.rows.length > 0 ? this.xyz.rows[0] : null;
-        this.setState({ xyz: this.xyz, selected: this.selected })
+        this.moveItems('row', 'axis', 'rows', 'axes');
     }
 
     handleAddY() {
-        const selected = this.selected.axis;
-        if (selected == null) { return }
-        this.xyz.columns.push(selected);
-        this.selected.column = selected;
-        this.xyz.axes = this.xyz.axes.filter(x => x !== selected)
-        this.selected.axis = this.xyz.axes.length > 0 ? this.xyz.axes[0] : null;
-        this.setState({ xyz: this.xyz, selected: this.selected })
+        this.moveItems('axis', 'column', 'axes', 'columns');
     }
 
     handleRemoveY() {
-        const selected = this.selected.column;
-        if (selected == null) { return }
-        this.xyz.axes.push(selected);
-        this.selected.axis = selected;
-        this.xyz.columns = this.xyz.columns.filter(x => x !== selected)
-        this.selected.column = this.xyz.columns.length > 0 ? this.xyz.columns[0] : null;
-        this.setState({ xyz: this.xyz, selected: this.selected })
+        this.moveItems('column', 'axis', 'columns', 'axes');
     }
 
-    handleChangeZ(e) {
-        const selected = this.selected.axis;
-        if (selected == null) { return }
-        const currentKey = this.xyz.keys[0];
-        this.xyz.keys = [selected];
-        this.selected.key = selected;
-        this.xyz.axes = this.xyz.axes.filter(x => x !== selected)
-        this.xyz.axes.push(currentKey);
-        this.selected.axis = currentKey;
-        this.setState({ xyz: this.xyz, selected: this.selected })
+    handleChangeZ() {
+        this.switchItems('axis', 'key', 'axes', 'keys');
     }
 
     render() {
